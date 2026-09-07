@@ -1,0 +1,10 @@
+{
+	"id": "keel-keys",
+	"name": "Keel Keys",
+	"version": "0.1.0",
+	"minAppVersion": "1.13.0",
+	"description": "Treat ticket-style ids like BOARD-1 as first-class: autocomplete, hover preview, next-number creation and cross-project link resolution.",
+	"author": "Johannes Merwe",
+	"authorUrl": "https://github.com/JohannesMerwe",
+	"isDesktopOnly": false
+}
