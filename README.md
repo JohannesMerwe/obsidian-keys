@@ -2,7 +2,7 @@
 
 Ticket-style ids like BOARD-1 as first-class objects in your vault. Jira keys without Jira.
 
-**Obsidian plugin** · id `keel-keys` · status: resolver, decoration, autocomplete and new card built (2026-09-07), unreleased · MIT
+**Obsidian plugin** · id `keel-keys` · status: beta, not yet on the registry · MIT
 
 Type `KB-3` anywhere and it becomes a link with a hover preview of the card's title, state
 and column; nothing is written to your note. Autocomplete ids from the boards in the current
@@ -29,34 +29,7 @@ This plugin owns the id grammar, resolution and minting rules (SPEC-integration 
 
 ## What it does
 
-- **Resolves ids.** Grammar `^[A-Z][A-Z0-9]{1,7}-\d+# Keel Keys
-
-Ticket-style ids like BOARD-1 as first-class objects in your vault. Jira keys without Jira.
-
-**Obsidian plugin** · id `keel-keys` · status: resolver, decoration, autocomplete and new card built (2026-09-07), unreleased · MIT
-
-Type `KB-3` anywhere and it becomes a link with a hover preview of the card's title, state
-and column; nothing is written to your note. Autocomplete ids from the boards in the current
-workspace. Create the next card with a minted id from the board's manifest. Resolve
-cross-project links. Works on any vault that keeps cards as `<PREFIX>-<N>-<slug>.md` files.
-
-## Part of a family
-
-Keel Keys is one of the keel Obsidian plugins, five open-source plugins that make Obsidian a
-better surface for working with AI coding agents on a vault of specs, plans and boards. Each
-plugin stands alone; together they follow one integration spec. They light up extra features
-in a vault managed by [keel](https://github.com/JohannesMerwe/pangolin-keel), and stay useful
-without it.
-
-| Plugin | Does |
-|---|---|
-| [Keel Open Questions](https://github.com/JohannesMerwe/obsidian-open-questions) | agents ask questions in your notes; you answer with a click; decisions get logged |
-| [Keel Board](https://github.com/JohannesMerwe/obsidian-board) | kanban over a folder of markdown cards; dragging moves the file |
-| [Keel Cockpit](https://github.com/JohannesMerwe/obsidian-cockpit) | session context, keel verbs and handoff diff inside the vault |
-| [Keel Keys](https://github.com/JohannesMerwe/obsidian-keys) | ticket-style ids as links, autocomplete and next-number creation |
-| [Keel Diagram](https://github.com/JohannesMerwe/obsidian-diagram) | edit Mermaid and D2 in place; text stays the source of truth |
-
-. A board is any directory with a
+- **Resolves ids.** Grammar `^[A-Z][A-Z0-9]{1,7}-\d+$`. A board is any directory with a
   `board.json` (pangolin-board's format), or, without one, a `board/` directory holding
   `<PREFIX>-<N>-<slug>.md` files. Ids resolve inside the note's keel workspace first (the
   nearest `keel.json` above it), then across the vault; that fallback is a setting.
@@ -97,8 +70,19 @@ Point a throwaway dev vault's `.obsidian/plugins/keel-keys/` at this directory (
 GitHub releases whose tag equals the `manifest.json` version; the workflow in
 `.github/workflows/release.yml` builds and attaches the artifacts. Beta installs through BRAT.
 
+## Install
+
+Until the plugin is on the community registry, install it with
+[BRAT](https://github.com/TfTHacker/obsidian42-brat): *Add beta plugin* →
+`JohannesMerwe/obsidian-keys`. Requires Obsidian 1.13.0 or later.
+
 ## Agent skills
 
-`agent/` will hold the same instructions in claude-skill and copilot-prompt formats, telling
-an agent what convention this plugin renders and what it must never do. Copy them into your
-agent's skills directory until keel links them for you.
+`agent/` holds the same instructions in two formats, telling an agent how to write ids that
+resolve, how to mint a new one through `board.json`'s `next` counter (read fresh, write back,
+then create the file), and what it must never do — reuse, renumber or invent an id:
+
+- `agent/claude/keel-keys/SKILL.md` — copy the folder into `.claude/skills/`.
+- `agent/copilot/keel-keys.prompt.md` — copy into `.github/prompts/`.
+
+Keel links them for you once its skills linking lands.
