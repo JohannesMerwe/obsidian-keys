@@ -1,38 +1,47 @@
 import { describe, expect, it } from 'vitest';
-import { ancestors, detectWorkspace, dirname, findWorkspaceRoot, projectNames, projectOf } from './workspace';
+import { VaultFiles, ancestors, dirname, findWorkspace, join } from './workspace';
 
-const roots = new Set(['obsidian', 'pangolin', 'wilderless/site']);
-const has = (d: string) => roots.has(d);
+const files = (map: Record<string, string>): VaultFiles => ({
+	exists: (p) => p in map,
+	read: (p) => map[p] ?? null,
+});
 
-describe('C1 workspace detection', () => {
+const vault = files({
+	'obsidian/keel.json': '{"name":"obsidian","projects":[{"name":"keys-plugin"},{"name":"board-plugin"}]}',
+	'pangolin/keel.json': '{"projects":["keel"]}',
+	'wilderless/site/keel.json': 'not json',
+});
+
+describe('C1 reference implementation (copied from obsidian-open-questions)', () => {
 	it('lists ancestors nearest first down to the vault root', () => {
 		expect(ancestors('a/b/c.md')).toEqual(['a/b', 'a', '']);
 		expect(ancestors('c.md')).toEqual(['']);
 		expect(dirname('c.md')).toBe('');
+		expect(join('', 'x')).toBe('x');
+		expect(join('a', 'x')).toBe('a/x');
 	});
-	it('finds the nearest keel.json', () => {
-		expect(findWorkspaceRoot('obsidian/keys-plugin/INDEX.md', has)).toBe('obsidian');
-		expect(findWorkspaceRoot('wilderless/site/docs/x.md', has)).toBe('wilderless/site');
-		expect(findWorkspaceRoot('wilderless/other.md', has)).toBeNull();
-		expect(findWorkspaceRoot('STRUCTURE.md', has)).toBeNull();
+	it('finds the nearest keel.json and the project when listed', () => {
+		expect(findWorkspace('obsidian/keys-plugin/board/backlog/KK-1-x.md', vault)).toEqual({
+			root: 'obsidian',
+			name: 'obsidian',
+			projects: ['keys-plugin', 'board-plugin'],
+			project: 'keys-plugin',
+		});
+		expect(findWorkspace('obsidian/specs/SPEC.md', vault)?.project).toBeNull();
+		expect(findWorkspace('obsidian/keys-plugin', vault)?.project).toBeNull();
 	});
-	it('treats a keel.json at the vault root as a workspace', () => {
-		expect(findWorkspaceRoot('notes/x.md', (d) => d === '')).toBe('');
+	it('accepts bare-string projects and falls back to the directory name', () => {
+		expect(findWorkspace('pangolin/keel/board/wip/KEEL-1-x.md', vault)).toEqual({ root: 'pangolin', name: 'pangolin', projects: ['keel'], project: 'keel' });
 	});
-	it('resolves the project only when keel.json lists it', () => {
-		const projects = ['keys-plugin', 'board-plugin'];
-		expect(projectOf('obsidian/keys-plugin/board/backlog/KK-1-x.md', 'obsidian', projects)).toBe('keys-plugin');
-		expect(projectOf('obsidian/specs/SPEC.md', 'obsidian', projects)).toBeNull();
-		expect(projectOf('obsidian/keys-plugin', 'obsidian', projects)).toBeNull();
-		expect(projectOf('keys-plugin/INDEX.md', '', projects)).toBe('keys-plugin');
-		expect(projectOf('elsewhere/x.md', 'obsidian', projects)).toBeNull();
-	});
-	it('reads project names defensively', () => {
-		expect(projectNames({ projects: [{ name: 'a' }, { name: 3 }, {}] })).toEqual(['a']);
-		expect(projectNames(null)).toEqual([]);
+	it('survives an unreadable manifest', () => {
+		expect(findWorkspace('wilderless/site/docs/x.md', vault)).toEqual({ root: 'wilderless/site', name: 'site', projects: [], project: null });
 	});
 	it('returns null in plain mode', () => {
-		expect(detectWorkspace('x.md', has, () => [])).toBeNull();
-		expect(detectWorkspace('obsidian/keys-plugin/INDEX.md', has, () => ['keys-plugin'])).toEqual({ root: 'obsidian', project: 'keys-plugin' });
+		expect(findWorkspace('STRUCTURE.md', vault)).toBeNull();
+		expect(findWorkspace('wilderless/other.md', vault)).toBeNull();
+	});
+	it('treats a keel.json at the vault root as a workspace', () => {
+		const root = files({ 'keel.json': '{"projects":[{"name":"p"}]}' });
+		expect(findWorkspace('p/notes/x.md', root)).toEqual({ root: '', name: 'vault', projects: ['p'], project: 'p' });
 	});
 });

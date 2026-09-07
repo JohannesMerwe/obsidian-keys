@@ -57,6 +57,14 @@ describe('BoardIndex build', () => {
 		expect(index.boards().some((b) => b.dir === 'pangolin/data')).toBe(false);
 		expect(index.resolve('KK-1', 'x.md')?.path).toBe('obsidian/keys-plugin/board/backlog/KK-1-grammar.md');
 	});
+	it('answers C1 for any note from the cached keel.json files', async () => {
+		const index = new BoardIndex(source(vault));
+		await index.ensure();
+		expect(index.workspaceOf('obsidian/keys-plugin/board/backlog/KK-1-grammar.md')).toEqual({ root: 'obsidian', name: 'obsidian', projects: ['keys-plugin', 'board-plugin'], project: 'keys-plugin' });
+		expect(index.workspaceOf('obsidian/INDEX.md')?.project).toBeNull();
+		expect(index.workspaceOf('loose/board/backlog/LOOSE-4-plain.md')).toBeNull();
+		expect(index.workspaceRootOf('pangolin/keel/board/wip/KEEL-11-seam.md')).toBe('pangolin');
+	});
 	it('records workspace roots and manifests', async () => {
 		const index = new BoardIndex(source(vault));
 		await index.ensure();

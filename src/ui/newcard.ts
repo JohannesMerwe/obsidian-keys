@@ -3,7 +3,7 @@ import { idFromFilename } from '../core/ids';
 import { Board } from '../core/index';
 import { bumpManifest, mintWithoutManifest } from '../core/mint';
 import { cardContent, cardFileName, entryColumn, isoDate, newCardDir } from '../core/newcard';
-import { joinPath, projectNames } from '../core/workspace';
+import { join } from '../core/workspace';
 import type KeelKeysPlugin from '../main';
 
 /** A board is writable unless its manifest names a provider other than pangolin-board (SPEC §C3). */
@@ -34,7 +34,7 @@ function usedNumbers(app: App, board: Board): Set<number> {
 export async function mintId(plugin: KeelKeysPlugin, board: Board): Promise<string> {
 	const used = usedNumbers(plugin.app, board);
 	if (!board.manifest) return `${board.prefix}-${mintWithoutManifest(used)}`;
-	const manifestPath = joinPath(board.dir, 'board.json');
+	const manifestPath = join(board.dir, 'board.json');
 	const file = plugin.app.vault.getFileByPath(manifestPath);
 	if (!file) throw new Error(`${manifestPath} disappeared`);
 	let id = '';
@@ -54,7 +54,7 @@ export async function createCard(plugin: KeelKeysPlugin, board: Board, title: st
 	const dir = newCardDir(board, column, now.getFullYear());
 	if (!plugin.app.vault.getFolderByPath(dir)) await plugin.app.vault.createFolder(dir);
 	const id = await mintId(plugin, board);
-	const path = joinPath(dir, cardFileName(id, title));
+	const path = join(dir, cardFileName(id, title));
 	if (plugin.app.vault.getFileByPath(path)) throw new Error(`${path} already exists`);
 	const content = cardContent({ id, title, state: column.state, column: column.dir, type, date: isoDate(now) });
 	const file = await plugin.app.vault.create(path, content);
@@ -63,25 +63,12 @@ export async function createCard(plugin: KeelKeysPlugin, board: Board, title: st
 }
 
 /** The board a new card most likely belongs to: the note's project board, else the board around the note, else the first visible one. */
-export async function defaultBoard(plugin: KeelKeysPlugin, notePath: string | null, boards: Board[]): Promise<Board | null> {
+export function defaultBoard(plugin: KeelKeysPlugin, notePath: string | null, boards: Board[]): Board | null {
 	if (notePath !== null) {
-		const root = plugin.index.workspaceRootOf(notePath);
-		if (root !== null) {
-			const keel = plugin.app.vault.getFileByPath(joinPath(root, 'keel.json'));
-			let projects: string[] = [];
-			if (keel) {
-				try {
-					projects = projectNames(JSON.parse(await plugin.app.vault.cachedRead(keel)) as { projects?: { name?: unknown }[] });
-				} catch {
-					projects = [];
-				}
-			}
-			const rel = root === '' ? notePath : notePath.slice(root.length + 1);
-			const project = rel.split('/')[0] ?? '';
-			if (projects.includes(project)) {
-				const board = plugin.index.boardAt(joinPath(joinPath(root, project), 'board'));
-				if (board) return board;
-			}
+		const ws = plugin.index.workspaceOf(notePath);
+		if (ws?.project) {
+			const board = plugin.index.boardAt(join(join(ws.root, ws.project), 'board'));
+			if (board) return board;
 		}
 		const around = plugin.index.boardContaining(notePath);
 		if (around) return around;

@@ -76,7 +76,7 @@ export default class KeelKeysPlugin extends Plugin {
 			new Notice('Keel Keys: no boards found in this vault. A board is a board.json or a board/ directory of <PREFIX>-<N>-<slug>.md files.');
 			return;
 		}
-		new NewCardModal(this, boards, await defaultBoard(this, notePath, boards)).open();
+		new NewCardModal(this, boards, defaultBoard(this, notePath, boards)).open();
 	}
 
 	/** Persist settings and push the ones the index and views read. */

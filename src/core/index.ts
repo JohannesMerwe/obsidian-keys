@@ -7,7 +7,7 @@
 import { CardMeta, parseCard } from './card';
 import { idFromFilename, parseId } from './ids';
 import { BoardColumn, BoardManifest, DEFAULT_COLUMNS, parseManifest } from './manifest';
-import { dirname, findWorkspaceRoot } from './workspace';
+import { VaultFiles, Workspace, dirname, findWorkspace } from './workspace';
 
 export interface FileSource {
 	/** Every file path in the vault (any extension), vault-relative. */
@@ -60,7 +60,9 @@ function boardDirFor(path: string): string | null {
 export class BoardIndex {
 	private boardList: Board[] = [];
 	private byPrefix = new Map<string, Board[]>();
-	private keelRoots = new Set<string>();
+	/** Sync view of the vault for C1 detection: file existence from the last listing, keel.json text cached at build. */
+	private files: VaultFiles = { exists: () => false, read: () => null };
+	private workspaceCache = new Map<string, Workspace | null>();
 	private metaCache = new Map<string, CardMeta>();
 	private dirty = true;
 	private building: Promise<void> | null = null;
@@ -96,8 +98,18 @@ export class BoardIndex {
 	private async build(): Promise<void> {
 		this.dirty = false;
 		const paths = this.source.listPaths();
-		const roots = new Set<string>();
-		for (const p of paths) if (p === 'keel.json' || p.endsWith('/keel.json')) roots.add(dirname(p));
+		const live = new Set(paths);
+		const keelTexts = new Map<string, string>();
+		for (const p of paths) {
+			if (p !== 'keel.json' && !p.endsWith('/keel.json')) continue;
+			try {
+				keelTexts.set(p, await this.source.read(p));
+			} catch {
+				keelTexts.set(p, '');
+			}
+		}
+		const files: VaultFiles = { exists: (p) => live.has(p), read: (p) => keelTexts.get(p) ?? null };
+		const rootOf = (p: string) => findWorkspace(p, files)?.root ?? null;
 
 		const boards = new Map<string, Board>();
 		const manifestBoards = new Map<string, Board>();
@@ -117,7 +129,7 @@ export class BoardIndex {
 				prefixes: [manifest.prefix, ...manifest.prefixes],
 				manifest,
 				columns: manifest.columns,
-				workspaceRoot: findWorkspaceRoot(p, (d) => roots.has(d)),
+				workspaceRoot: rootOf(p),
 				cards: new Map(),
 			};
 			manifestBoards.set(dir, board);
@@ -145,7 +157,7 @@ export class BoardIndex {
 						prefixes: [parsed.prefix],
 						manifest: null,
 						columns: DEFAULT_COLUMNS,
-						workspaceRoot: findWorkspaceRoot(p, (d) => roots.has(d)),
+						workspaceRoot: rootOf(p),
 						cards: new Map(),
 					};
 					boards.set(key, owner);
@@ -165,8 +177,8 @@ export class BoardIndex {
 		}
 		this.boardList = list;
 		this.byPrefix = byPrefix;
-		this.keelRoots = roots;
-		const live = new Set(paths);
+		this.files = files;
+		this.workspaceCache.clear();
 		for (const k of this.metaCache.keys()) if (!live.has(k)) this.metaCache.delete(k);
 		this.generation++;
 	}
@@ -175,9 +187,18 @@ export class BoardIndex {
 		return this.boardList;
 	}
 
-	/** Workspace root of a note per §C1, from the roots seen at the last build. */
+	/** The note's workspace per §C1 (root, name, projects, project), from the files seen at the last build; null in plain mode. */
+	workspaceOf(notePath: string): Workspace | null {
+		let ws = this.workspaceCache.get(notePath);
+		if (ws === undefined) {
+			ws = findWorkspace(notePath, this.files);
+			this.workspaceCache.set(notePath, ws);
+		}
+		return ws;
+	}
+
 	workspaceRootOf(notePath: string): string | null {
-		return findWorkspaceRoot(notePath, (d) => this.keelRoots.has(d));
+		return this.workspaceOf(notePath)?.root ?? null;
 	}
 
 	/** Boards visible from a note: its own workspace (or, in plain mode, boards outside any workspace) first, then the rest when cross-workspace is on. */
