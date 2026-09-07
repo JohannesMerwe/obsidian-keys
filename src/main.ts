@@ -3,7 +3,9 @@ import { BoardIndex } from './core/index';
 import { DEFAULT_SETTINGS, KeelKeysSettingTab, KeelKeysSettings, loadSettings } from './settings';
 import { idDecorations } from './ui/decorations';
 import { PopoverHost, decoratedTarget, openCard, showCardPopover } from './ui/hover';
+import { NewCardModal, defaultBoard } from './ui/newcard';
 import { decorateReadingView } from './ui/postprocessor';
+import { IdSuggest } from './ui/suggest';
 import { VaultSource } from './ui/source';
 
 export default class KeelKeysPlugin extends Plugin {
@@ -34,6 +36,14 @@ export default class KeelKeysPlugin extends Plugin {
 			showCardPopover(this, this.popoverHost, hit.el, hit.id, hit.path, null);
 		});
 
+		// KK-3: autocomplete and next-number creation.
+		this.registerEditorSuggest(new IdSuggest(this));
+		this.addCommand({
+			id: 'new-card',
+			name: 'New card',
+			callback: () => void this.openNewCard(),
+		});
+
 		this.addCommand({
 			id: 'rebuild-index',
 			name: 'Rebuild ID index',
@@ -56,6 +66,17 @@ export default class KeelKeysPlugin extends Plugin {
 			this.registerEvent(this.app.vault.on('modify', (f) => this.onModify(f)));
 			this.refreshIndex();
 		});
+	}
+
+	private async openNewCard(): Promise<void> {
+		await this.index.ensure();
+		const notePath = this.app.workspace.getActiveFile()?.path ?? null;
+		const boards = this.index.boardsFor(notePath ?? '');
+		if (boards.length === 0) {
+			new Notice('Keel Keys: no boards found in this vault. A board is a board.json or a board/ directory of <PREFIX>-<N>-<slug>.md files.');
+			return;
+		}
+		new NewCardModal(this, boards, await defaultBoard(this, notePath, boards)).open();
 	}
 
 	/** Persist settings and push the ones the index and views read. */

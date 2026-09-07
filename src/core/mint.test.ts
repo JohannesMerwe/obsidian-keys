@@ -14,6 +14,11 @@ describe('bumpManifest', () => {
 		const text = '{\n\t"prefix": "KB",\n\t"next": 1\n}';
 		expect(bumpManifest(text).text).toBe('{\n\t"prefix": "KB",\n\t"next": 2\n}');
 	});
+	it('skips numbers that already have a file, never reusing an id', () => {
+		const bump = bumpManifest('{"prefix":"KK","next":5}', (n) => n === 5 || n === 6);
+		expect(bump.id).toBe('KK-7');
+		expect(bump.text).toBe('{\n  "prefix": "KK",\n  "next": 8\n}');
+	});
 	it('throws on an invalid manifest', () => {
 		expect(() => bumpManifest('{"prefix":"KB"}')).toThrow();
 		expect(() => bumpManifest('nope')).toThrow();

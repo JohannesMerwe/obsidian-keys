@@ -79,3 +79,22 @@
 	font-size: var(--font-ui-smaller);
 	color: var(--text-faint);
 }
+
+.keel-keys-suggestion {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-2-1);
+}
+
+.keel-keys-suggestion-id {
+	font-family: var(--font-monospace);
+	font-size: var(--font-ui-small);
+}
+
+.keel-keys-suggestion-title {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
