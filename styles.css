@@ -1,8 +1,81 @@
-/*
+/* Keel Keys — decorated ids and the hover preview. Theme variables only. */
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
+.keel-keys-id {
+	color: var(--link-color);
+	text-decoration-line: var(--link-decoration);
+	text-decoration-thickness: var(--link-decoration-thickness);
+	cursor: var(--cursor-link);
+}
 
-If your plugin does not need CSS, delete this file.
+.keel-keys-id:hover {
+	color: var(--link-color-hover);
+	text-decoration-line: var(--link-decoration-hover);
+}
 
-*/
+/* In the editor a plain click still places the cursor; Mod+click opens. */
+.cm-editor .keel-keys-id {
+	cursor: text;
+}
+
+.cm-editor .keel-keys-id:hover {
+	cursor: var(--cursor-link);
+}
+
+.keel-keys-preview {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-2-2);
+	padding: var(--size-4-2) var(--size-4-3);
+	max-width: 28em;
+}
+
+.keel-keys-preview-id {
+	font-family: var(--font-monospace);
+	font-size: var(--font-ui-small);
+	color: var(--text-muted);
+}
+
+.keel-keys-preview-title {
+	font-weight: var(--font-semibold);
+	color: var(--text-normal);
+}
+
+.keel-keys-preview-meta {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--size-4-2);
+	font-size: var(--font-ui-small);
+	color: var(--text-muted);
+}
+
+.keel-keys-state {
+	padding: 0 var(--size-4-1);
+	border-radius: var(--radius-s);
+	background-color: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
+.keel-keys-state-in-progress {
+	color: var(--color-orange);
+}
+
+.keel-keys-state-done {
+	color: var(--color-green);
+}
+
+.keel-keys-preview-type {
+	font-style: italic;
+}
+
+.keel-keys-preview-path {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-faint);
+	word-break: break-all;
+}
+
+.keel-keys-preview-hint {
+	padding: 0 var(--size-4-3) var(--size-4-2);
+	font-size: var(--font-ui-smaller);
+	color: var(--text-faint);
+}

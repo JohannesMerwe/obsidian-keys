@@ -1,11 +1,16 @@
 import { MarkdownView, Notice, Plugin, TAbstractFile, debounce } from 'obsidian';
 import { BoardIndex } from './core/index';
 import { DEFAULT_SETTINGS, KeelKeysSettingTab, KeelKeysSettings, loadSettings } from './settings';
+import { idDecorations } from './ui/decorations';
+import { PopoverHost, decoratedTarget, openCard, showCardPopover } from './ui/hover';
+import { decorateReadingView } from './ui/postprocessor';
 import { VaultSource } from './ui/source';
 
 export default class KeelKeysPlugin extends Plugin {
 	settings: KeelKeysSettings = DEFAULT_SETTINGS;
 	index!: BoardIndex;
+	/** HoverParent for reading-view popovers. */
+	readonly popoverHost = new PopoverHost();
 
 	private readonly refreshIndex = debounce(() => void this.rebuild(), 250, true);
 
@@ -13,6 +18,21 @@ export default class KeelKeysPlugin extends Plugin {
 		this.settings = loadSettings(await this.loadData());
 		this.index = new BoardIndex(new VaultSource(this.app.vault), { crossWorkspace: this.settings.crossWorkspace });
 		this.addSettingTab(new KeelKeysSettingTab(this.app, this));
+
+		// KK-2: view-only decoration of bare ids in the editor and in reading view.
+		this.registerEditorExtension(idDecorations(this));
+		this.registerMarkdownPostProcessor((el, ctx) => decorateReadingView(this, el, ctx));
+		this.registerDomEvent(document, 'click', (evt) => {
+			const hit = decoratedTarget(evt);
+			if (!hit || hit.el.closest('.cm-editor')) return;
+			evt.preventDefault();
+			void openCard(this, hit.path, evt);
+		});
+		this.registerDomEvent(document, 'mouseover', (evt) => {
+			const hit = decoratedTarget(evt);
+			if (!hit || hit.el.closest('.cm-editor')) return;
+			showCardPopover(this, this.popoverHost, hit.el, hit.id, hit.path, null);
+		});
 
 		this.addCommand({
 			id: 'rebuild-index',
