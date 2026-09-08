@@ -82,7 +82,8 @@ Until the plugin is on the community registry, install it with
 resolve, how to mint a new one through `board.json`'s `next` counter (read fresh, write back,
 then create the file), and what it must never do — reuse, renumber or invent an id:
 
-- `agent/claude/keel-keys/SKILL.md` — copy the folder into `.claude/skills/`.
-- `agent/copilot/keel-keys.prompt.md` — copy into `.github/prompts/`.
-
-Keel links them for you once its skills linking lands.
+- `agent/claude/keel-keys/SKILL.md` — on a machine where this repo is a declared checkout,
+  `keel start` links it into `~/.claude/skills/` and `keel stop` unlinks it (keel
+  0.1, KEEL-42). Without keel, copy the folder into `.claude/skills/`.
+- `agent/copilot/keel-keys.prompt.md` — copy into `.github/prompts/`; keel does not link
+  Copilot prompts yet (where they belong on a machine is an open question).
