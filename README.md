@@ -83,7 +83,7 @@ resolve, how to mint a new one through `board.json`'s `next` counter (read fresh
 then create the file), and what it must never do — reuse, renumber or invent an id:
 
 - `agent/claude/keel-keys/SKILL.md` — on a machine where this repo is a declared checkout,
-  `keel start` links it into `~/.claude/skills/` and `keel stop` unlinks it (keel
-  0.1, KEEL-42). Without keel, copy the folder into `.claude/skills/`.
+  `keel start` links it into `~/.claude/skills/` and `keel stop` unlinks it. Without
+  keel, copy the folder into `.claude/skills/`.
 - `agent/copilot/keel-keys.prompt.md` — copy into `.github/prompts/`; keel does not link
   Copilot prompts yet (where they belong on a machine is an open question).
